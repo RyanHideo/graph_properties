@@ -232,23 +232,30 @@ def greedy_coloring(graph):
     return num_colors
 
 
-# Função para entrada manual do grafo (interface aprimorada)
+# Função para entrada manual do grafo (interface aprimorada com validação)
 def input_graph_manual():
     g = Graph()
     print("=== Inserção Manual de Grafo ===")
-    print("Digite os vértices do grafo, separados por espaço (ex: A B C D):")
+    print("1. Insira os vértices do grafo em uma única linha, separados por espaços.")
+    print("   Exemplo: A B C D")
     vertices = input("Vértices: ").split()
     if not vertices:
         print("Nenhum vértice informado. Retornando ao menu.")
         return g
+    # Guarda os vértices declarados para validação
+    vertices_set = set(vertices)
     for v in vertices:
         g.add_vertex(v)
 
-    print("\nAgora, insira as arestas do grafo.")
-    print("Para cada aresta, use o formato: vértice1 vértice2 [peso]")
-    print("Exemplo a b 2")
-    print("- O 'peso' é opcional e o valor padrão é 1.")
-    print("Quando terminar, digite 'fim' e pressione Enter.\n")
+    print("\n2. Insira as arestas do grafo.")
+    print("   Cada aresta deve ser informada em uma linha no seguinte formato:")
+    print("      vértice1 vértice2 [peso]")
+    print("   - 'vértice1' e 'vértice2' devem ser vértices previamente declarados.")
+    print("   - O campo [peso] é opcional. Se omitido, o peso padrão será 1.")
+    print("   Exemplos:")
+    print("      A B 2.5    -> cria uma aresta entre A e B com peso 2.5")
+    print("      C D        -> cria uma aresta entre C e D com peso 1 (padrão)")
+    print("   Para encerrar a inserção, digite 'fim' e pressione Enter.\n")
 
     i = 1
     while True:
@@ -260,6 +267,10 @@ def input_graph_manual():
             print("Entrada inválida! Informe pelo menos dois vértices.")
             continue
         u, v = dados[0], dados[1]
+        # Verifica se os vértices foram previamente declarados
+        if u not in vertices_set or v not in vertices_set:
+            print("Entrada inválida! Um dos vértices não foi declarado na lista inicial.")
+            continue
         peso = 1
         if len(dados) >= 3:
             try:
