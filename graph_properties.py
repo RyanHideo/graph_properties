@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
-import networkx as nx
 import matplotlib.pyplot as plt
+import networkx as nx  # Usado APENAS para visualização
 
 
-# Classe que representa o grafo
+# Classe que representa o grafo (implementado com dicionário de listas de adjacência)
 class Graph:
     def __init__(self):
-        self.adj = {}  # dicionário: vértice -> lista de (vértice vizinho, peso)
-        self.weighted = False  # indicador se algum peso foi diferente de 1
+        self.adj = {}  # chave: vértice, valor: lista de tuplas (vértice vizinho, peso)
+        self.weighted = False  # indicador se algum peso é diferente de 1
 
     def add_vertex(self, v):
         if v not in self.adj:
             self.adj[v] = []
 
     def add_edge(self, u, v, weight=1):
-        self.add_vertex(u)
-        self.add_vertex(v)
+        # Aqui não criamos vértices automaticamente, eles devem já ter sido declarados
         self.adj[u].append((v, weight))
         self.adj[v].append((u, weight))  # grafo não direcionado
         if weight != 1:
@@ -25,11 +24,11 @@ class Graph:
         return list(self.adj.keys())
 
     def num_edges(self):
-        # Cada aresta é armazenada duas vezes
+        # Cada aresta aparece duas vezes na lista de adjacência
         return sum(len(neighbors) for neighbors in self.adj.values()) // 2
 
 
-# Estrutura para Union-Find (usada no MST)
+# Estrutura de Union-Find (para o algoritmo de Kruskal)
 class UnionFind:
     def __init__(self, elements):
         self.parent = {e: e for e in elements}
@@ -45,7 +44,9 @@ class UnionFind:
         self.parent[rootB] = rootA
 
 
-# Função para verificar conectividade (utilizando DFS)
+# --- Funções para calcular as propriedades do grafo (implementadas manualmente) ---
+
+# 1. Conectividade (usando DFS)
 def is_connected(graph):
     verts = graph.vertices()
     if not verts:
@@ -62,13 +63,13 @@ def is_connected(graph):
     return len(visited) == len(verts)
 
 
-# Função que retorna os graus de cada vértice, grau máximo e mínimo
+# 2. Cálculo dos graus de cada vértice, grau máximo e mínimo
 def degrees_info(graph):
     degrees = {v: len(graph.adj[v]) for v in graph.vertices()}
     return degrees, max(degrees.values()), min(degrees.values())
 
 
-# Função BFS para calcular distâncias a partir de um vértice
+# 3. Busca em largura (BFS) para calcular distâncias a partir de um vértice
 def bfs(graph, start):
     distances = {v: float('inf') for v in graph.vertices()}
     distances[start] = 0
@@ -82,22 +83,22 @@ def bfs(graph, start):
     return distances
 
 
-# Cálculo de raio e diâmetro (apenas se o grafo for conexo)
+# 4. Cálculo do raio e diâmetro (para grafo conexo)
 def radius_diameter(graph):
     ecc = {}  # excentricidade de cada vértice
     for v in graph.vertices():
         dist = bfs(graph, v)
-        maxd = max(dist.values())
-        ecc[v] = maxd
+        ecc[v] = max(dist.values())
     return min(ecc.values()), max(ecc.values())
 
 
-# Algoritmo de Kruskal para árvore geradora mínima (apenas se o grafo for conexo e ponderado)
+# 5. Algoritmo de Kruskal para encontrar a árvore geradora mínima (MST)
 def kruskal_mst(graph):
     edges = []
+    # Criamos uma lista de arestas sem duplicatas
     for u in graph.adj:
         for (v, w) in graph.adj[u]:
-            if u < v:  # evitar duplicatas
+            if u < v:
                 edges.append((w, u, v))
     edges.sort(key=lambda x: x[0])
     uf = UnionFind(graph.vertices())
@@ -111,16 +112,17 @@ def kruskal_mst(graph):
     return mst_edges, total_weight
 
 
-# Verifica se o grafo é completo
+# 6. Verifica se o grafo é completo
 def is_complete(graph):
-    n = len(graph.vertices())
-    for v in graph.vertices():
+    verts = graph.vertices()
+    n = len(verts)
+    for v in verts:
         if len(graph.adj[v]) != n - 1:
             return False
     return True
 
 
-# Verifica se o grafo é Euleriano (conexo e todos os vértices com grau par)
+# 7. Verifica se o grafo é Euleriano (conexo e todos os vértices com grau par)
 def is_eulerian(graph):
     if not is_connected(graph):
         return False
@@ -130,7 +132,7 @@ def is_eulerian(graph):
     return True
 
 
-# Busca de ciclo Hamiltoniano (backtracking)
+# 8. Busca por ciclo Hamiltoniano (backtracking)
 def find_hamiltonian_cycle(graph):
     verts = graph.vertices()
     n = len(verts)
@@ -142,7 +144,7 @@ def find_hamiltonian_cycle(graph):
 
     def backtrack(current):
         if len(path) == n:
-            # Verifica se há aresta de retorno ao início
+            # Verifica se o último vértice tem aresta de volta ao início
             for (neighbor, _) in graph.adj[current]:
                 if neighbor == start:
                     return True
@@ -164,7 +166,7 @@ def find_hamiltonian_cycle(graph):
         return None
 
 
-# Verifica se há ciclo no grafo (para determinar se é acíclico)
+# 9. Verifica se o grafo possui ciclo (usando DFS)
 def has_cycle(graph):
     visited = set()
 
@@ -185,12 +187,12 @@ def has_cycle(graph):
     return False
 
 
-# Algoritmo de coloração por backtracking para achar o número cromático
+# 10. Cálculo do número cromático usando backtracking
 def chromatic_number_backtracking(graph):
     verts = graph.vertices()
     n = len(verts)
     colors = {v: None for v in verts}
-    best_solution = [n + 1]  # solução melhor encontrada (número mínimo de cores)
+    best_solution = [n + 1]  # inicializa com um valor acima do máximo possível
 
     def is_valid(v, color):
         for (neighbor, _) in graph.adj[v]:
@@ -218,7 +220,7 @@ def chromatic_number_backtracking(graph):
     return best_solution[0]
 
 
-# Algoritmo guloso para coloração (pode não ser ótimo)
+# 11. Algoritmo de coloração guloso (pode não ser o ótimo)
 def greedy_coloring(graph):
     verts = graph.vertices()
     coloring = {}
@@ -228,11 +230,12 @@ def greedy_coloring(graph):
         while color in neighbor_colors:
             color += 1
         coloring[v] = color
-    num_colors = max(coloring.values()) + 1 if coloring else 0
-    return num_colors
+    return max(coloring.values()) + 1 if coloring else 0
 
 
-# Função para entrada manual do grafo (interface aprimorada com validação)
+# --- Funções de entrada e visualização ---
+
+# Entrada manual com validação dos vértices (apenas arestas entre vértices previamente declarados)
 def input_graph_manual():
     g = Graph()
     print("=== Inserção Manual de Grafo ===")
@@ -242,20 +245,16 @@ def input_graph_manual():
     if not vertices:
         print("Nenhum vértice informado. Retornando ao menu.")
         return g
-    # Guarda os vértices declarados para validação
     vertices_set = set(vertices)
     for v in vertices:
         g.add_vertex(v)
 
     print("\n2. Insira as arestas do grafo.")
-    print("   Cada aresta deve ser informada em uma linha no seguinte formato:")
+    print("   Cada aresta deve ser informada no formato:")
     print("      vértice1 vértice2 [peso]")
-    print("   - 'vértice1' e 'vértice2' devem ser vértices previamente declarados.")
-    print("   - O campo [peso] é opcional. Se omitido, o peso padrão será 1.")
-    print("   Exemplos:")
-    print("      A B 2.5    -> cria uma aresta entre A e B com peso 2.5")
-    print("      C D        -> cria uma aresta entre C e D com peso 1 (padrão)")
-    print("   Para encerrar a inserção, digite 'fim' e pressione Enter.\n")
+    print("   - 'vértice1' e 'vértice2' devem ter sido previamente declarados.")
+    print("   - Se o peso não for informado, será considerado 1.")
+    print("   Digite 'fim' para encerrar.\n")
 
     i = 1
     while True:
@@ -267,9 +266,8 @@ def input_graph_manual():
             print("Entrada inválida! Informe pelo menos dois vértices.")
             continue
         u, v = dados[0], dados[1]
-        # Verifica se os vértices foram previamente declarados
         if u not in vertices_set or v not in vertices_set:
-            print("Entrada inválida! Um dos vértices não foi declarado na lista inicial.")
+            print("Entrada inválida! Um dos vértices não foi declarado inicialmente.")
             continue
         peso = 1
         if len(dados) >= 3:
@@ -282,7 +280,7 @@ def input_graph_manual():
     return g
 
 
-# Função para selecionar um grafo predefinido
+# Seleção de grafos predefinidos (exemplos)
 def select_predefined_graph():
     print("Selecione um grafo predefinido:")
     print("1 - Grafo completo K4")
@@ -319,7 +317,7 @@ def select_predefined_graph():
     return g
 
 
-# Função para desenhar e exibir o grafo utilizando NetworkX e Matplotlib
+# Função para desenhar o grafo (usando NetworkX apenas para visualização)
 def draw_graph(grafo):
     G = nx.Graph()
     for v in grafo.vertices():
@@ -331,8 +329,8 @@ def draw_graph(grafo):
                 G.add_edge(u, v, weight=weight)
                 added_edges.add((u, v))
     pos = nx.spring_layout(G)
-    nx.draw(G, pos, with_labels=True, node_color='lightblue', edge_color='gray',
-            node_size=800, font_size=10)
+    nx.draw(G, pos, with_labels=True, node_color='lightblue',
+            edge_color='gray', node_size=800, font_size=10)
     weights = nx.get_edge_attributes(G, 'weight')
     if any(w != 1 for w in weights.values()):
         nx.draw_networkx_edge_labels(G, pos, edge_labels=weights)
@@ -340,7 +338,7 @@ def draw_graph(grafo):
     plt.show()
 
 
-# Função principal que reúne tudo em loop
+# --- Função principal (menu) ---
 def main():
     while True:
         print("\n=== Programa de Propriedades de Grafos ===")
@@ -359,6 +357,7 @@ def main():
             print("Opção inválida!")
             continue
 
+        # Exibindo propriedades do grafo (calculadas sem NetworkX)
         print("\n=== Propriedades do Grafo ===")
         print("Número de vértices:", len(grafo.vertices()))
         print("Número de arestas:", grafo.num_edges())
@@ -384,8 +383,8 @@ def main():
             for (u, v, w) in mst:
                 print(f"  {u} - {v} (peso: {w})")
             print("Peso total do MST:", peso_total)
-        elif not grafo.weighted:
-            print("Grafo não é ponderado; MST não aplicável (ou todas as arestas têm peso 1).")
+        else:
+            print("Grafo não é ponderado ou não é conexo; MST não aplicável.")
 
         ciclo = has_cycle(grafo)
         print("Grafo acíclico:", "Sim" if not ciclo else "Não")
