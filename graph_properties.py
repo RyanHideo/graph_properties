@@ -69,24 +69,29 @@ def degrees_info(graph):
 
 
 # 3. Busca em largura (BFS) para calcular distâncias a partir de um vértice
-def bfs(graph, start):
+import heapq
+
+def dijkstra(graph, start):
     distances = {v: float('inf') for v in graph.vertices()}
     distances[start] = 0
-    queue = [start]
-    while queue:
-        v = queue.pop(0)
-        for (neighbor, _) in graph.adj[v]:
-            if distances[neighbor] == float('inf'):
-                distances[neighbor] = distances[v] + 1
-                queue.append(neighbor)
+    heap = [(0, start)]
+    while heap:
+        dist_u, u = heapq.heappop(heap)
+        if dist_u > distances[u]:
+            continue
+        for (v, w) in graph.adj[u]:
+            if distances[v] > distances[u] + w:
+                distances[v] = distances[u] + w
+                heapq.heappush(heap, (distances[v], v))
     return distances
+
 
 
 # 4. Cálculo do raio e diâmetro (para grafo conexo)
 def radius_diameter(graph):
     ecc = {}  # excentricidade de cada vértice
     for v in graph.vertices():
-        dist = bfs(graph, v)
+        dist = dijkstra(graph, v)
         ecc[v] = max(dist.values())
     return min(ecc.values()), max(ecc.values())
 
